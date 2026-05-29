@@ -1,22 +1,27 @@
 name: Publish @wppconnect/baileys
 
-# Publishes this fork to npm as @wppconnect/baileys.
+# Publishes this fork to npm as @wppconnect/baileys via OIDC trusted publishing.
 #
-# The fork's package.json keeps the upstream name ("baileys") so the branch
-# stays a faithful mirror and is trivial to sync. The scoped name is applied
-# ONLY here in the runner, right before publishing — never committed.
+# WHY A `publish` BRANCH:
+# The default branch (master) stays a faithful mirror of upstream so rebasing/
+# syncing with WhiskeySockets/Baileys is conflict-free. This `publish` branch is
+# the ONLY place package.json carries the scoped name + the fork's repository
+# url — which OIDC provenance REQUIRES to match the GitHub repo. Keep `publish`
+# rebased on master and re-apply only those package.json fields when syncing.
 #
-# Trigger: push a tag like `wpp-v7.0.0-rc13` (own prefix, so it never collides
-# with the upstream's `v*` tags).
+# FIRST PUBLISH IS MANUAL (see PUBLISHING.md): a brand-new package must be
+# created on npm and have its Trusted Publisher configured before OIDC works.
+# After that, pushing to `publish` (or running this workflow) publishes.
 #
-# Auth: OIDC trusted publishing (same model as wppconnect-team/wppconnect).
-# Configure a trusted publisher for @wppconnect/baileys in npm pointing at this
-# workflow. No NPM_TOKEN secret needed.
+# Auth: OIDC trusted publishing — configure the trusted publisher on npm for
+# @wppconnect/baileys pointing at THIS repo + workflow + the `publish` branch.
+# No NPM_TOKEN secret needed. npm auto-generates provenance.
 
 on:
   push:
-    tags:
-      - 'wpp-v*'
+    branches:
+      - publish
+  workflow_dispatch:
 
 permissions:
   id-token: write
@@ -26,14 +31,17 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout (publish branch)
         uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.14.0
           registry-url: 'https://registry.npmjs.org'
+
+      - name: Update npm (>= 11.5.1 required for trusted publishing)
+        run: npm install -g npm@latest
 
       - name: Enable Corepack (yarn)
         run: corepack enable
@@ -46,18 +54,12 @@ jobs:
       - name: Build
         run: yarn build
 
-      - name: Apply @wppconnect scope (runner only, not committed)
+      - name: Publish to npm (OIDC)
         run: |
-          VERSION="${GITHUB_REF_NAME#wpp-v}"
-          npm pkg set name='@wppconnect/baileys'
-          npm pkg set version="${VERSION}"
-          npm pkg set 'publishConfig.access'='public'
-          echo "Publishing @wppconnect/baileys@${VERSION}"
-
-      - name: Publish to npm
-        run: |
-          if [[ "${GITHUB_REF_NAME}" == *"-alpha"* || "${GITHUB_REF_NAME}" == *"-rc"* || "${GITHUB_REF_NAME}" == *"-beta"* ]]; then
-            npm publish --provenance --access public --tag next
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$NAME@$VERSION already published, skipping."
           else
-            npm publish --provenance --access public
+            npm publish
           fi
