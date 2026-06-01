@@ -58,8 +58,9 @@ jobs:
         run: |
           NAME=$(node -p "require('./package.json').name")
           VERSION=$(node -p "require('./package.json').version")
+          TAG=$(node -p "const v = require('./package.json').version; const m = v.match(/-([a-zA-Z]+)/); m ? m[1] : 'latest'")
           if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
             echo "$NAME@$VERSION already published, skipping."
           else
-            npm publish
+            npm publish --tag "$TAG"
           fi
