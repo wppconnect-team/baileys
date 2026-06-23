@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 jobs:
   e2e:
@@ -19,7 +20,7 @@ jobs:
         image: ghcr.io/whiskeysockets-devtools/bartender:latest
         credentials:
           username: ${{ github.actor }}
-          password: ${{ secrets.BARTENDER_GHCR_TOKEN }}
+          password: ${{ secrets.BARTENDER_GHCR_TOKEN || github.token }}
         ports:
           - 8080:8080
         env:
