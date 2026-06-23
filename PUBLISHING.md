@@ -14,11 +14,10 @@ branch, using **OIDC trusted publishing** (no long-lived npm token).
 Keep `publish` rebased on `master`; the only diff should be those `package.json`
 fields (`name`, `repository.url`, `publishConfig`).
 
-## First publish (trusted publishing)
+## First publish (manual, then trusted publishing)
 
-Create the trusted publisher relationship once. This authorizes the GitHub
-Actions workflow to create and publish this package without a long-lived npm
-token:
+Create the package once with an interactive publish. This uses the npm account's
+2FA and does not require a long-lived CI token:
 
 ```bash
 git fetch origin
@@ -28,6 +27,14 @@ yarn install --immutable
 yarn build
 
 npm login                 # account with rights on the @wppconnect scope
+npm publish --access public --tag rc
+```
+
+After the package exists, create the trusted publisher relationship. This
+authorizes the GitHub Actions workflow to publish future versions without an npm
+token:
+
+```bash
 npm trust github @wppconnect/baileys \
   --repo wppconnect-team/baileys \
   --file publish-wppconnect.yml \
