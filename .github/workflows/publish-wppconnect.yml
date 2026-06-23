@@ -1,6 +1,6 @@
 name: Publish @wppconnect/baileys
 
-# Publishes this fork to npm as @wppconnect/baileys via OIDC trusted publishing.
+# Publishes this fork to npm as @wppconnect/baileys from the publish branch.
 #
 # WHY A `publish` BRANCH:
 # The default branch (master) stays a faithful mirror of upstream so rebasing/
@@ -9,13 +9,7 @@ name: Publish @wppconnect/baileys
 # url — which OIDC provenance REQUIRES to match the GitHub repo. Keep `publish`
 # rebased on master and re-apply only those package.json fields when syncing.
 #
-# FIRST PUBLISH IS MANUAL (see PUBLISHING.md): a brand-new package must be
-# created on npm and have its Trusted Publisher configured before OIDC works.
-# After that, pushing to `publish` (or running this workflow) publishes.
-#
-# Auth: OIDC trusted publishing — configure the trusted publisher on npm for
-# @wppconnect/baileys pointing at THIS repo + workflow + the `publish` branch.
-# No NPM_TOKEN secret needed. npm auto-generates provenance.
+# Auth: GitHub Actions secret NPM_TOKEN.
 
 on:
   push:
@@ -24,7 +18,6 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
@@ -40,7 +33,7 @@ jobs:
           node-version: 22.14.0
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Update npm (>= 11.5.1 required for trusted publishing)
+      - name: Update npm
         run: npm install -g npm@latest
 
       - name: Enable Corepack (yarn)
@@ -54,7 +47,9 @@ jobs:
       - name: Build
         run: yarn build
 
-      - name: Publish to npm (OIDC)
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           NAME=$(node -p "require('./package.json').name")
           VERSION=$(node -p "require('./package.json').version")
@@ -62,5 +57,5 @@ jobs:
           if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
             echo "$NAME@$VERSION already published, skipping."
           else
-            npm publish --access public --provenance --tag "$TAG"
+            npm publish --access public --tag "$TAG"
           fi
