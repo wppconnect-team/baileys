@@ -107,17 +107,15 @@ export const generateLinkPreviewIfRequired = async (
 }
 
 const assertColor = async (color: any) => {
-	let assertedColor
 	if (typeof color === 'number') {
-		assertedColor = color > 0 ? color : 0xffffffff + Number(color) + 1
+		return color > 0 ? color : 0xffffffff + Number(color) + 1
 	} else {
 		let hex = color.trim().replace('#', '')
 		if (hex.length <= 6) {
 			hex = 'FF' + hex.padStart(6, '0')
 		}
 
-		assertedColor = parseInt(hex, 16)
-		return assertedColor
+		return parseInt(hex, 16)
 	}
 }
 
@@ -962,13 +960,11 @@ export function getAggregateVotesInPollMessage(
 
 		for (const option of vote.selectedOptions || []) {
 			const hash = option.toString()
-			let data = voteHashMap[hash]
-			if (!data) {
+			if (!voteHashMap[hash]) {
 				voteHashMap[hash] = {
 					name: 'Unknown',
 					voters: []
 				}
-				data = voteHashMap[hash]
 			}
 
 			voteHashMap[hash]!.voters.push(getKeyAuthor(update.pollUpdateMessageKey, meId))
