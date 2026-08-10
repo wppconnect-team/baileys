@@ -28,6 +28,9 @@ interface TransactionContext {
 	dbQueries: number
 }
 
+const makeSignalDataSet = (): SignalDataSet => Object.create(null) as SignalDataSet
+const makeSignalDataMap = <T>(): Record<string, T> => Object.create(null) as Record<string, T>
+
 /**
  * Adds caching capability to a SignalKeyStore
  * @param store the store to add caching to
@@ -224,7 +227,7 @@ export const addTransactionCapability = (
 			}
 
 			// In transaction - check cache first
-			const cached = ctx.cache[type] || {}
+			const cached = ctx.cache[type] || makeSignalDataMap()
 			const missing = ids.filter(id => !(id in cached))
 
 			if (missing.length > 0) {
@@ -234,12 +237,12 @@ export const addTransactionCapability = (
 				const fetched = await getTxMutex(type).runExclusive(() => state.get(type, missing))
 
 				// Update cache
-				ctx.cache[type] = ctx.cache[type] || ({} as any)
+				ctx.cache[type] = ctx.cache[type] || (makeSignalDataMap() as never)
 				Object.assign(ctx.cache[type]!, fetched)
 			}
 
 			// Return requested ids from cache
-			const result: { [key: string]: any } = {}
+			const result: { [key: string]: any } = makeSignalDataMap()
 			for (const id of ids) {
 				const value = ctx.cache[type]?.[id]
 				if (value !== undefined && value !== null) {
@@ -316,8 +319,8 @@ export const addTransactionCapability = (
 			try {
 				return await mutex.runExclusive(async () => {
 					const ctx: TransactionContext = {
-						cache: {},
-						mutations: {},
+						cache: makeSignalDataSet(),
+						mutations: makeSignalDataSet(),
 						dbQueries: 0
 					}
 

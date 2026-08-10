@@ -15,6 +15,20 @@ const makeTestLogger = (): ILogger =>
 	}) as unknown as ILogger
 
 describe('event-buffer', () => {
+	it('buffers untrusted IDs without modifying object prototypes', async () => {
+		const ev = makeEventBuffer(makeTestLogger())
+		const received: BaileysEventMap['contacts.upsert'][] = []
+		ev.on('contacts.upsert', data => received.push(data))
+
+		ev.buffer()
+		ev.emit('contacts.upsert', [{ id: '__proto__', name: 'safe value' }])
+		ev.flush()
+
+		await new Promise(resolve => setTimeout(resolve, 0))
+		expect(received).toEqual([[{ id: '__proto__', name: 'safe value' }]])
+		expect(Object.prototype).not.toHaveProperty('name')
+	})
+
 	describe('messaging-history.set pastParticipants buffering', () => {
 		it('should include pastParticipants in flushed event', async () => {
 			const logger = makeTestLogger()
