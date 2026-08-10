@@ -90,14 +90,14 @@ function serializeData(key: number, value: Value, flag: number): Buffer {
 	if (value === null) {
 		if (flag === FLAG_GLOBAL) {
 			buffer = Buffer.alloc(bufferLength)
-			offset = serializeHeader(buffer, offset, key, flag)
+			serializeHeader(buffer, offset, key, flag)
 			return buffer
 		}
 	} else if (typeof value === 'number' && Number.isInteger(value)) {
 		// is number
 		if (value === 0 || value === 1) {
 			buffer = Buffer.alloc(bufferLength)
-			offset = serializeHeader(buffer, offset, key, flag | ((value + 1) << 4))
+			serializeHeader(buffer, offset, key, flag | ((value + 1) << 4))
 			return buffer
 		} else if (-128 <= value && value < 128) {
 			buffer = Buffer.alloc(bufferLength + 1)

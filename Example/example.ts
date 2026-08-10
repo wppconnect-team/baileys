@@ -30,8 +30,6 @@ const usePairingCode = process.argv.includes('--use-pairing-code')
 // keep this out of the socket itself, so as to prevent a message decryption/encryption loop across socket restarts
 const msgRetryCounterCache = new NodeCache() as CacheStore
 
-const onDemandMap = new Map<string, string>()
-
 // Read line interface
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
 const question = (text: string) => new Promise<string>((resolve) => rl.question(text, resolve))
