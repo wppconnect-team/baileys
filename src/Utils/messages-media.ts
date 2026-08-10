@@ -178,6 +178,7 @@ export const encodeBase64EncodedStringForUpload = (b64: string) => {
 	while (unpaddedLength > 0 && b64[unpaddedLength - 1] === '=') {
 		unpaddedLength--
 	}
+
 	return encodeURIComponent(b64.slice(0, unpaddedLength).replace(/\+/g, '-').replace(/\//g, '_'))
 }
 
