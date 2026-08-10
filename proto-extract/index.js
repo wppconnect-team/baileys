@@ -81,7 +81,7 @@ async function findAppModules() {
     'LimitSharing$TriggerType'
   );
 
-  const qrModules = acorn.parse(patchedQrData).body;
+  const qrModules = acorn.parse(patchedQrData, { ecmaVersion: 'latest' }).body;
   
   const result = qrModules.filter((m) => {
     const expressions = extractAllExpressions(m);
@@ -403,6 +403,10 @@ async function findAppModules() {
           ['}']
         );
       } else {
+        info.flags = info.flags.map((flag) =>
+          flag === 'required' ? 'optional' : flag
+        );
+
         if (info.flags.includes('packed')) {
           info.flags.splice(info.flags.indexOf('packed'));
           info.packed = ' [packed=true]';
