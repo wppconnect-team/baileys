@@ -164,7 +164,7 @@ const startSock = async() => {
 			if(events['messages.update']) {
 				logger.debug(events['messages.update'], 'messages.update fired')
 
-				for(const { key, update } of events['messages.update']) {
+				for(const { update } of events['messages.update']) {
 					if(update.pollUpdates) {
 						const pollCreation: proto.IMessage = {} // get the poll creation message somehow
 						if(pollCreation) {
