@@ -91,7 +91,7 @@ export class MessageRetryManager {
 		ttlAutopurge: true
 	})
 	private pendingPhoneRequests: PendingPhoneRequest = {}
-	private readonly maxMsgRetryCount: number = 5
+	private readonly maxMsgRetryCount: number
 	private statistics: RetryStatistics = {
 		totalRetries: 0,
 		successfulRetries: 0,

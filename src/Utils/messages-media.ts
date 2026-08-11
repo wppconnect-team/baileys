@@ -1,5 +1,5 @@
 import { Boom } from '@hapi/boom'
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import * as Crypto from 'crypto'
 import { once } from 'events'
 import { createReadStream, createWriteStream, promises as fs, WriteStream } from 'fs'
@@ -122,14 +122,17 @@ const extractVideoThumb = async (
 	size: { width: number; height: number }
 ) =>
 	new Promise<void>((resolve, reject) => {
-		const cmd = `ffmpeg -ss ${time} -i ${path} -y -vf scale=${size.width}:-1 -vframes 1 -f image2 ${destPath}`
-		exec(cmd, err => {
-			if (err) {
-				reject(err)
-			} else {
-				resolve()
+		execFile(
+			'ffmpeg',
+			['-ss', time, '-i', path, '-y', '-vf', `scale=${size.width}:-1`, '-vframes', '1', '-f', 'image2', destPath],
+			err => {
+				if (err) {
+					reject(err)
+				} else {
+					resolve()
+				}
 			}
-		})
+		)
 	})
 
 export const extractImageThumb = async (bufferOrFilePath: Readable | Buffer | string, width = 32) => {
@@ -170,8 +173,14 @@ export const extractImageThumb = async (bufferOrFilePath: Readable | Buffer | st
 	}
 }
 
-export const encodeBase64EncodedStringForUpload = (b64: string) =>
-	encodeURIComponent(b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/\=+$/, ''))
+export const encodeBase64EncodedStringForUpload = (b64: string) => {
+	let unpaddedLength = b64.length
+	while (unpaddedLength > 0 && b64[unpaddedLength - 1] === '=') {
+		unpaddedLength--
+	}
+
+	return encodeURIComponent(b64.slice(0, unpaddedLength).replace(/\+/g, '-').replace(/\//g, '_'))
+}
 
 export const generateProfilePicture = async (
 	mediaUpload: WAMediaUpload,
@@ -560,7 +569,7 @@ export const downloadEncryptedContent = async (
 	let firstBlockIsIV = false
 	// if a start byte is specified -- then we need to fetch the previous chunk as that will form the IV
 	if (startByte) {
-		const chunk = toSmallestChunkSize(startByte || 0)
+		const chunk = toSmallestChunkSize(startByte)
 		if (chunk) {
 			startChunk = chunk - AES_CHUNK_SIZE
 			bytesFetched = chunk
@@ -569,7 +578,7 @@ export const downloadEncryptedContent = async (
 		}
 	}
 
-	const endChunk = endByte ? toSmallestChunkSize(endByte || 0) + AES_CHUNK_SIZE : undefined
+	const endChunk = endByte ? toSmallestChunkSize(endByte) + AES_CHUNK_SIZE : undefined
 
 	const headersInit = options?.headers ? options.headers : undefined
 	const headers: Record<string, string> = {

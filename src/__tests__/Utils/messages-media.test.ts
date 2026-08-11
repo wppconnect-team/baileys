@@ -6,7 +6,19 @@ import * as path from 'path'
 import { Readable } from 'stream'
 import type { MediaConnInfo, SocketConfig } from '../../Types'
 import type { ILogger } from '../../Utils/logger'
-import { encryptedStream, getWAUploadToServer, type UploadParams, uploadWithNodeHttp } from '../../Utils/messages-media'
+import {
+	encodeBase64EncodedStringForUpload,
+	encryptedStream,
+	getWAUploadToServer,
+	type UploadParams,
+	uploadWithNodeHttp
+} from '../../Utils/messages-media'
+
+describe('encodeBase64EncodedStringForUpload', () => {
+	it('removes long padding without a backtracking regex', () => {
+		expect(encodeBase64EncodedStringForUpload(`a+b/${'='.repeat(10_000)}`)).toBe('a-b_')
+	})
+})
 
 const createTempFile = async (content: string): Promise<string> => {
 	const filePath = path.join(os.tmpdir(), `test-upload-${Date.now()}.txt`)

@@ -30,8 +30,6 @@ const usePairingCode = process.argv.includes('--use-pairing-code')
 // keep this out of the socket itself, so as to prevent a message decryption/encryption loop across socket restarts
 const msgRetryCounterCache = new NodeCache() as CacheStore
 
-const onDemandMap = new Map<string, string>()
-
 // Read line interface
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
 const question = (text: string) => new Promise<string>((resolve) => rl.question(text, resolve))
@@ -164,7 +162,7 @@ const startSock = async() => {
 			if(events['messages.update']) {
 				logger.debug(events['messages.update'], 'messages.update fired')
 
-				for(const { key, update } of events['messages.update']) {
+				for(const { update } of events['messages.update']) {
 					if(update.pollUpdates) {
 						const pollCreation: proto.IMessage = {} // get the poll creation message somehow
 						if(pollCreation) {
