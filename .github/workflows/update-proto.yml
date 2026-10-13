@@ -8,11 +8,12 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  statuses: write
 
 jobs:
   update-proto:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v7
@@ -51,6 +52,7 @@ jobs:
           echo -e "{\n\t\"version\": [$WA_NUMBERS]\n}" > src/Defaults/baileys-version.json
 
       - name: Create Pull Request
+        id: generated_pr
         uses: peter-evans/create-pull-request@v8
         with:
           commit-message: 'chore: updated proto/version to v${{steps.wa_proto_info.outputs.wa_version}}'
@@ -58,7 +60,72 @@ jobs:
           branch: 'update-proto/stable'
           delete-branch: true
           labels: 'update-proto'
-          body: "Automated changes\nFound source JS URL: ${{steps.wa_proto_info.outputs.wa_js_url}}\nCurrent version: v${{steps.wa_proto_info.outputs.wa_version}}"
+          body: "Automated changes\nFound source JS URL: ${{steps.wa_proto_info.outputs.wa_js_url}}\nCurrent version: v${{steps.wa_proto_info.outputs.wa_version}}\nGenerated protocol validation: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           add-paths: |
             WAProto/*
             src/Defaults/baileys-version.json
+
+      # GITHUB_TOKEN-generated PRs do not trigger the normal build/test suite.
+      # Validate the committed PR head here and publish its own visible status.
+      - name: Mark generated protocol validation pending
+        if: steps.generated_pr.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ steps.generated_pr.outputs.pull-request-head-sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" \
+            -f state=pending -f context=generated-protocol-validation \
+            -f description='Checking generated protocol against source' -f target_url="$RUN_URL"
+
+      - name: Checkout generated protocol head
+        if: steps.generated_pr.outputs.pull-request-number
+        env:
+          HEAD_SHA: ${{ steps.generated_pr.outputs.pull-request-head-sha }}
+        run: git checkout --detach "$HEAD_SHA"
+
+      - name: Build generated protocol and source
+        id: generated_build
+        if: steps.generated_pr.outputs.pull-request-number
+        continue-on-error: true
+        run: yarn build > generated-proto-build.log 2>&1
+
+      - name: Lint generated protocol and source
+        id: generated_lint
+        if: steps.generated_pr.outputs.pull-request-number
+        continue-on-error: true
+        run: yarn lint > generated-proto-lint.log 2>&1
+
+      - name: Test generated protocol and source
+        id: generated_test
+        if: steps.generated_pr.outputs.pull-request-number
+        continue-on-error: true
+        run: yarn test > generated-proto-test.log 2>&1
+
+      - name: Preserve generated protocol diagnostics
+        if: always() && steps.generated_pr.outputs.pull-request-number
+        uses: actions/upload-artifact@v7
+        with:
+          name: generated-protocol-validation
+          path: generated-proto-*.log
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Publish generated protocol validation result
+        if: always() && steps.generated_pr.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ steps.generated_pr.outputs.pull-request-head-sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BUILD_RESULT: ${{ steps.generated_build.outcome }}
+          LINT_RESULT: ${{ steps.generated_lint.outcome }}
+          TEST_RESULT: ${{ steps.generated_test.outcome }}
+        run: |
+          state=failure
+          if [ "$BUILD_RESULT" = success ] && [ "$LINT_RESULT" = success ] && [ "$TEST_RESULT" = success ]; then
+            state=success
+          fi
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" \
+            -f state="$state" -f context=generated-protocol-validation \
+            -f description="build=$BUILD_RESULT lint=$LINT_RESULT test=$TEST_RESULT" -f target_url="$RUN_URL"
+          [ "$state" = success ]
