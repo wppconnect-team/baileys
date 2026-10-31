@@ -1,4 +1,25 @@
-<h1><img alt="Baileys logo" src="https://raw.githubusercontent.com/WhiskeySockets/Baileys/refs/heads/master/Media/logo.png" height="75"/></h1>
+# Retained README reference / Referência preservada do README
+
+This document preserves the previous `.github/README.md` for technical details, acknowledgments and history. Start with [README.md](../README.md) or [README.pt-BR.md](../README.pt-BR.md) for the current verified entry path. Older commands, release claims, third-party examples and API signatures here may need migration; consult the current source and linked guides.
+
+Este documento preserva o `.github/README.md` anterior com detalhes técnicos, agradecimentos e histórico. Comece pelo [README em português](../README.pt-BR.md) para as instruções iniciais conferidas. Comandos antigos, afirmações sobre releases, exemplos de terceiros e assinaturas de API podem exigir migração; consulte os fontes e guias atuais.
+
+---
+
+<!-- wppconnect-official-brand -->
+<p align="center">
+  <a href="https://wppconnect-team.github.io/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://wppconnect-team.github.io/brand/wppconnect-dark.png" />
+      <img src="https://wppconnect-team.github.io/brand/wppconnect-light.png" alt="WPPConnect" width="220" height="121" />
+    </picture>
+  </a>
+</p>
+<!-- /wppconnect-official-brand -->
+
+# Baileys
+
+WPPConnect organization fork of [WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys).
 
 
 > [!CAUTION]
@@ -6,7 +27,7 @@
 >
 > As of 7.0.0, multiple breaking changes were introduced into the library.
 >
-> Please check out https://whiskey.so/migrate-latest for more information.
+> Please check out https://baileys.wiki/migration/v7 for more information.
 
 Baileys is a WebSockets-based TypeScript library for interacting with the WhatsApp Web API.
 
