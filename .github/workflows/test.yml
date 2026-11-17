@@ -23,6 +23,9 @@ jobs:
         with:
           node-version: 20.x
 
+      - name: Test release workflow dispatch
+        run: node --test .github/actions/release-workflow.test.cjs
+
       - name: Enable Corepack and Set Yarn Version
         run: |
           corepack enable

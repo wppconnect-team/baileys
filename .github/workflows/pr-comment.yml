@@ -21,7 +21,7 @@ jobs:
 
       - uses: mshick/add-pr-comment@v2
         with:
-          repo-token: ${{ secrets.PERSONAL_TOKEN || github.token }}
+          repo-token: ${{ github.token }}
           message-id: pr-test
           message: |
             Thanks for opening this pull request and contributing to the project!
